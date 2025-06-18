@@ -4,6 +4,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 
 
 
+
 metadata = MetaData(naming_convention={
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
 })
@@ -18,6 +19,7 @@ class Customer(db.Model):
     name = db.Column(db.String)
     
     reviews = db.relationship('Review', back_populates='customer')
+    items = association_proxy('reviews', 'item')
 
     def __repr__(self):
         return f'<Customer {self.id}, {self.name}>'
@@ -26,7 +28,7 @@ class Customer(db.Model):
             return {
                 "id": self.id,
                 "name": self.name,
-                # Add "items": [i.to_dict() for i in self.items] if using relationships
+                "reviews": [review.to_dict() for review in self.reviews]
             }    
 
 
@@ -47,7 +49,10 @@ class Item(db.Model):
             "id": self.id,
             "name": self.name,
             "price": self.price,
+            "reviews": [review.to_dict() for review in self.reviews]
         }
+
+
 class Review(db.Model):
     __tablename__ = 'reviews'
 
@@ -68,5 +73,15 @@ class Review(db.Model):
             "id": self.id,
             "comment": self.comment,
             "customer_id": self.customer_id,
-            "item_id": self.item_id
+            "item_id": self.item_id,
+            "customer": {
+            "id": self.customer.id,
+            "name": self.customer.name
+        } if self.customer else None,
+        "item": {
+            "id": self.item.id,
+            "name": self.item.name,
+            "price": self.item.price
+        } if self.item else None
+    
         }
